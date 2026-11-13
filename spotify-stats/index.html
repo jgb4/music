@@ -200,7 +200,7 @@
       <div class="seg" role="group" aria-label="Time range" id="rangeSeg">
         <button data-range="short_term">4 weeks</button>
         <button data-range="medium_term" aria-pressed="true">6 months</button>
-        <button data-range="long_term">12 months</button>
+        <button data-range="long_term">1 year</button>
       </div>
       <span class="lbl" id="rangeLbl"></span>
     </div>
@@ -235,7 +235,7 @@
 
     <div class="card">
       <h2>How your taste is shifting</h2>
-      <p class="note">Your top artists from the last 4 weeks compared with the last 12 months</p>
+      <p class="note">Your top artists from the last 4 weeks compared with roughly the last year</p>
       <div class="trends" id="trends"></div>
     </div>
 
@@ -285,7 +285,7 @@ const API = "https://api.spotify.com/v1";
 const RANGES = {
   short_term:  { label: "4 weeks",   long: "the last 4 weeks" },
   medium_term: { label: "6 months",  long: "the last 6 months" },
-  long_term:   { label: "12 months", long: "the last 12 months" },
+  long_term:   { label: "1 year",    long: "roughly the last year (Spotify updates this ranking slowly)" },
 };
 const MAX_LIKED = 5000; // cap on liked songs fetched for the library chart
 
