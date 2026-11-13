@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spotify Stats</title>
+<meta name="description" content="Sign in with Spotify to see your top artists, tracks, genres and listening trends. Runs in your browser.">
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --text: #1a1d23; --muted: #626a77;
+    --border: #dde1e7; --grid: #e9ecf0; --accent: #2f6fed; --accent-text: #ffffff;
+    --accent-soft: #e8effd; --danger: #c43d3d; --ok: #1f8a4c; --tip-bg: #1a1d23; --tip-text: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121418; --surface: #1b1e24; --text: #e8eaee; --muted: #9aa2ae;
+      --border: #2d323b; --grid: #262a32; --accent: #5b8ff5; --accent-text: #0d1117;
+      --accent-soft: #1e2a40; --danger: #ef6b6b; --ok: #4cc27f; --tip-bg: #e8eaee; --tip-text: #121418;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121418; --surface: #1b1e24; --text: #e8eaee; --muted: #9aa2ae;
+    --border: #2d323b; --grid: #262a32; --accent: #5b8ff5; --accent-text: #0d1117;
+    --accent-soft: #1e2a40; --danger: #ef6b6b; --ok: #4cc27f; --tip-bg: #e8eaee; --tip-text: #121418;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 16px 64px; }
+  a { color: var(--accent); }
+  .back { font-size: 13px; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--accent); }
+  h1 { font-size: 26px; margin: 8px 0 4px; }
+  h2 { font-size: 17px; margin: 0 0 2px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .note { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; min-width: 0; }
+  .primary {
+    background: var(--accent); color: var(--accent-text); border: 0; padding: 10px 18px;
+    border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block;
+  }
+  .ghost {
+    background: transparent; border: 1px solid var(--border); color: var(--text); padding: 8px 14px;
+    border-radius: 8px; font: inherit; cursor: pointer; text-decoration: none; display: inline-block;
+  }
+  .ghost:hover { border-color: var(--accent); }
+  .link-btn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .err { color: var(--danger); }
+  code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--accent-soft); padding: 2px 6px; border-radius: 4px; overflow-wrap: anywhere; }
+  input[type=text] { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); flex: 1; min-width: 0; }
+  ol.steps { padding-left: 20px; margin: 0; }
+  ol.steps li { margin-bottom: 12px; }
+
+  /* Header */
+  .profile { display: flex; align-items: center; gap: 14px; margin: 8px 0 20px; flex-wrap: wrap; }
+  .profile .who { flex: 1; min-width: 0; }
+  .profile h1 { margin: 0; overflow-wrap: anywhere; }
+  .profile .sub { margin: 0; }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none; }
+
+  /* Range switch */
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 9px; padding: 3px; background: var(--surface); gap: 2px; max-width: 100%; }
+  .seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+  .sticky { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sticky .lbl { color: var(--muted); font-size: 13px; }
+
+  /* Stat tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+  .tile .k { font-size: 13px; color: var(--muted); }
+  .tile .v { font-size: 24px; font-weight: 650; letter-spacing: -.01em; line-height: 1.25; overflow-wrap: anywhere; }
+  .tile .s { font-size: 12px; color: var(--muted); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid2 > .card { margin-bottom: 0; }
+  .grid2 + .card, .grid2 + .grid2 { margin-top: 16px; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .head .note { margin: 0; }
+
+  /* Artists */
+  .artists { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 16px 12px; }
+  .artist { text-align: center; color: inherit; text-decoration: none; min-width: 0; }
+  .artist .pic { width: 100%; aspect-ratio: 1; border-radius: 50%; object-fit: cover; display: block; margin-bottom: 6px; }
+  .artist .name { font-weight: 600; font-size: 14px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .artist .rank { font-size: 12px; color: var(--muted); }
+  a.artist:hover .name { color: var(--accent); }
+
+  /* Track lists */
+  ol.tracks { list-style: none; padding: 0; margin: 0; }
+  ol.tracks li { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-top: 1px solid var(--grid); min-width: 0; }
+  ol.tracks li:first-child { border-top: 0; }
+  ol.tracks .n { width: 22px; text-align: right; color: var(--muted); font-size: 13px; flex: none; font-variant-numeric: tabular-nums; }
+  ol.tracks .art { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; flex: none; }
+  ol.tracks .t { flex: 1; min-width: 0; }
+  ol.tracks .t a, ol.tracks .t span.title { display: block; font-weight: 600; color: inherit; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ol.tracks .t a:hover { color: var(--accent); }
+  ol.tracks .t .by { display: block; color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ol.tracks .m { color: var(--muted); font-size: 13px; flex: none; font-variant-numeric: tabular-nums; }
+  .more { margin-top: 10px; }
+
+  .ph { display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .artist .ph { font-size: 28px; }
+  ol.tracks .ph { font-size: 13px; }
+
+  /* Horizontal bars */
+  .hbars { display: grid; gap: 6px; }
+  .hbar { display: grid; grid-template-columns: minmax(80px, 38%) 1fr 40px; gap: 10px; align-items: center; font-size: 14px; }
+  .hbar .hl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar .track { height: 14px; display: block; }
+  .hbar .fill { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 2px; }
+  .hbar .hv { text-align: right; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .hbar:hover .fill { opacity: .8; }
+
+  /* Column charts */
+  .cols { display: flex; align-items: flex-end; gap: 2px; height: var(--h, 140px); border-bottom: 1px solid var(--border); margin-bottom: 24px;
+          background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--grid) calc(25% - 1px) 25%); }
+  .col { flex: 1; height: 100%; display: flex; align-items: flex-end; position: relative; min-width: 0; }
+  .col .bar { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; }
+  .col:hover .bar { opacity: .8; }
+  .col .tick { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 5px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .peak { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+
+  /* Trends */
+  .trends { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 20px; }
+  .trend h3 { font-size: 14px; margin: 0 0 2px; }
+  .trend .note { margin-bottom: 8px; }
+  .mini { list-style: none; padding: 0; margin: 0; }
+  .mini li { display: flex; align-items: center; gap: 10px; padding: 4px 0; min-width: 0; }
+  .mini .pic { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex: none; font-size: 12px; }
+  .mini .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: inherit; text-decoration: none; }
+  .mini a.nm:hover { color: var(--accent); }
+  .mini .dl { font-size: 12px; color: var(--muted); flex: none; font-variant-numeric: tabular-nums; }
+  .mini .up { color: var(--ok); font-weight: 600; }
+  .empty { color: var(--muted); font-size: 13px; }
+
+  #tip { position: fixed; z-index: 50; pointer-events: none; background: var(--tip-bg); color: var(--tip-text); font-size: 13px; padding: 6px 9px; border-radius: 6px; white-space: pre-line; max-width: 240px; }
+  .spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .center { text-align: center; padding: 48px 20px; }
+  .demo-banner { background: var(--accent-soft); border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-bottom: 16px; }
+  footer { margin-top: 24px; font-size: 13px; color: var(--muted); text-align: center; }
+  footer button { color: var(--muted); text-decoration: underline; }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="../">← Music</a>
+
+  <!-- First-time setup: no Client ID yet -->
+  <section id="setup" hidden>
+    <h1>Spotify Stats</h1>
+    <p class="sub">Your top artists, tracks, genres and listening trends. Before anyone can sign in, the page needs a Spotify app to talk to.</p>
+    <div class="card">
+      <ol class="steps">
+        <li>Open the <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">Spotify developer dashboard</a> and choose <strong>Create app</strong>. The account that owns the app needs Spotify Premium.</li>
+        <li>Add this <strong>Redirect URI</strong> exactly, and tick <strong>Web API</strong>:<br>
+          <div class="row" style="margin-top:6px"><code id="redirectUri"></code> <button class="link-btn" id="copyRedirect">Copy</button></div></li>
+        <li>Under <strong>User Management</strong>, add the email of each Spotify account that will sign in (up to 5 while the app is in development mode).</li>
+        <li>Paste the app's <strong>Client ID</strong> here:
+          <div class="row" style="margin-top:6px"><input type="text" id="clientIdInput" placeholder="Client ID" autocomplete="off" spellcheck="false"><button class="primary" id="saveClientId">Save</button></div></li>
+      </ol>
+    </div>
+    <p class="note">Or <a href="?demo">look around with sample data</a>.</p>
+  </section>
+
+  <!-- Signed out -->
+  <section id="signin" hidden>
+    <h1>Spotify Stats</h1>
+    <p class="sub">Sign in with Spotify to see your top artists, tracks, genres and how your listening has changed over the last year.</p>
+    <div class="card">
+      <p class="err" id="signinErr" hidden></p>
+      <div class="row">
+        <button class="primary" id="loginBtn">Sign in with Spotify</button>
+        <a class="ghost" href="?demo">See a demo</a>
+      </div>
+      <p class="note" style="margin:14px 0 0">Read-only access to your top items, recently played and liked songs. Everything is shown in your browser; nothing is stored on a server.</p>
+    </div>
+  </section>
+
+  <section id="loading" hidden>
+    <div class="center"><div class="spinner"></div><span class="note" id="loadingText">Loading your stats…</span></div>
+  </section>
+
+  <section id="dash" hidden>
+    <div class="demo-banner" id="demoBanner" hidden>Sample data with made-up artists. <a href="./">Sign in</a> to see your own.</div>
+
+    <div class="profile">
+      <span id="meAvatar"></span>
+      <div class="who"><h1 id="meName"></h1><p class="sub">Your Spotify listening</p></div>
+      <button class="ghost" id="logoutBtn">Sign out</button>
+    </div>
+
+    <div class="sticky">
+      <div class="seg" role="group" aria-label="Time range" id="rangeSeg">
+        <button data-range="short_term">4 weeks</button>
+        <button data-range="medium_term" aria-pressed="true">6 months</button>
+        <button data-range="long_term">12 months</button>
+      </div>
+      <span class="lbl" id="rangeLbl"></span>
+    </div>
+
+    <div class="tiles" id="rangeTiles"></div>
+
+    <div class="card">
+      <div class="head"><h2>Top artists</h2><p class="note" id="artistsNote"></p></div>
+      <div class="artists" id="topArtists"></div>
+      <div class="more"><button class="link-btn" id="moreArtists"></button></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="head"><h2>Top tracks</h2></div>
+        <ol class="tracks" id="topTracks"></ol>
+        <div class="more"><button class="link-btn" id="moreTracks"></button></div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Top genres</h2>
+          <p class="note">Share of your top 50 artists, weighted by rank</p>
+          <div id="genres"></div>
+        </div>
+        <div class="card">
+          <h2>Eras</h2>
+          <p class="note">Release decade of your top 50 tracks</p>
+          <div id="eras"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>How your taste is shifting</h2>
+      <p class="note">Your top artists from the last 4 weeks compared with the last 12 months</p>
+      <div class="trends" id="trends"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>When you listen</h2>
+        <p class="note" id="clockNote"></p>
+        <div id="clock"></div>
+      </div>
+      <div class="card">
+        <div class="head"><h2>Recently played</h2></div>
+        <ol class="tracks" id="recent"></ol>
+        <div class="more"><button class="link-btn" id="moreRecent"></button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Liked songs over time</h2>
+      <p class="note" id="libraryNote">Loading your liked songs…</p>
+      <div class="tiles" id="libraryTiles" style="margin-bottom:18px"></div>
+      <div id="library"></div>
+    </div>
+
+    <footer>Data from Spotify. Shown only in your browser. <button class="link-btn" id="refreshBtn">Reload data</button></footer>
+  </section>
+
+  <section id="error" hidden>
+    <h1>Spotify Stats</h1>
+    <div class="card"><p class="err" id="errorText"></p><button class="primary" id="errorRetry">Try again</button></div>
+  </section>
+</main>
+<div id="tip" hidden></div>
+
+<script>
+"use strict";
+
+// =====================================================================================
+// Config
+// =====================================================================================
+// The Spotify app's Client ID (not a secret: PKCE needs no client secret).
+// If left empty, the page shows setup steps and keeps an ID pasted there in this browser.
+const CLIENT_ID = "";
+
+const SCOPES = "user-top-read user-read-recently-played user-library-read";
+const REDIRECT_URI = location.origin + location.pathname;
+const API = "https://api.spotify.com/v1";
+const RANGES = {
+  short_term:  { label: "4 weeks",   long: "the last 4 weeks" },
+  medium_term: { label: "6 months",  long: "the last 6 months" },
+  long_term:   { label: "12 months", long: "the last 12 months" },
+};
+const MAX_LIKED = 5000; // cap on liked songs fetched for the library chart
+
+// =====================================================================================
+// Helpers
+// =====================================================================================
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+const K = { client: "spstats.clientId", token: "spstats.token", verifier: "spstats.verifier", state: "spstats.state" };
+
+function clientId() { return CLIENT_ID || store.get(K.client) || ""; }
+
+function show(id) {
+  for (const s of ["setup", "signin", "loading", "dash", "error"]) $("#" + s).hidden = s !== id;
+}
+function fmtDur(ms) { const s = Math.round(ms / 1000); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); }
+function plural(n, w) { return n.toLocaleString() + " " + w + (n === 1 ? "" : "s"); }
+function ago(date) {
+  const m = Math.round((Date.now() - date) / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return m + "m ago";
+  const h = Math.round(m / 60);
+  if (h < 24) return h + "h ago";
+  const d = Math.round(h / 24);
+  return d < 30 ? d + "d ago" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+function hourLabel(h) { return h === 0 ? "12 AM" : h < 12 ? h + " AM" : h === 12 ? "12 PM" : (h - 12) + " PM"; }
+function yearOf(album) { const y = parseInt(album?.release_date, 10); return Number.isFinite(y) && y > 1800 ? y : null; }
+function median(a) { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2); }
+function initials(name) { return esc(String(name || "?").replace(/^the\s+/i, "").split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase() || "?"); }
+
+// Picks a reasonably small image from Spotify's largest-first list.
+function imgUrl(images, min = 150) {
+  if (!images || !images.length) return null;
+  const ok = images.filter((i) => (i.width || 640) >= min);
+  return (ok.length ? ok[ok.length - 1] : images[0]).url;
+}
+function pic(images, name, cls, min) {
+  const url = imgUrl(images, min);
+  return url
+    ? `<img class="${cls}" src="${esc(url)}" alt="" loading="lazy">`
+    : `<span class="${cls} ph" aria-hidden="true">${initials(name)}</span>`;
+}
+function spLink(obj) { return obj?.external_urls?.spotify || null; }
+function artistNames(t) { return (t.artists || []).map((a) => a.name).join(", "); }
+
+// =====================================================================================
+// Auth: Authorization Code with PKCE (no secret, no server)
+// =====================================================================================
+function randomString(len) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const v = crypto.getRandomValues(new Uint8Array(len));
+  return Array.from(v, (x) => chars[x % chars.length]).join("");
+}
+function b64url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function login() {
+  const verifier = randomString(64);
+  const challenge = b64url(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)));
+  const state = randomString(16);
+  store.set(K.verifier, verifier);
+  store.set(K.state, state);
+  if (store.get(K.verifier) !== verifier) {
+    signinError("This browser is blocking site storage, which sign-in needs. Try a normal (non-private) window.");
+    return;
+  }
+  const p = new URLSearchParams({
+    client_id: clientId(), response_type: "code", redirect_uri: REDIRECT_URI,
+    code_challenge_method: "S256", code_challenge: challenge, scope: SCOPES, state,
+  });
+  location.href = "https://accounts.spotify.com/authorize?" + p;
+}
+
+function saveToken(j) {
+  const old = getToken();
+  store.set(K.token, JSON.stringify({
+    access: j.access_token,
+    refresh: j.refresh_token || old?.refresh || null,
+    expires: Date.now() + (j.expires_in || 3600) * 1000,
+  }));
+}
+function getToken() { try { return JSON.parse(store.get(K.token) || "null"); } catch { return null; } }
+
+async function tokenRequest(params) {
+  const r = await fetch("https://accounts.spotify.com/api/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: clientId(), ...params }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error_description || j.error || "Spotify sign-in failed (" + r.status + ")");
+  return j;
+}
+
+async function exchangeCode(code, state) {
+  const verifier = store.get(K.verifier);
+  const expected = store.get(K.state);
+  store.del(K.verifier); store.del(K.state);
+  if (!verifier || !expected || state !== expected) throw new Error("Sign-in didn't complete. Please try again.");
+  saveToken(await tokenRequest({ grant_type: "authorization_code", code, redirect_uri: REDIRECT_URI, code_verifier: verifier }));
+}
+
+let refreshing = null;
+function refresh() {
+  refreshing ??= (async () => {
+    try {
+      const t = getToken();
+      if (!t?.refresh) throw new AuthError();
+      try { saveToken(await tokenRequest({ grant_type: "refresh_token", refresh_token: t.refresh })); }
+      catch { throw new AuthError(); }
+    } finally { refreshing = null; }
+  })();
+  return refreshing;
+}
+
+async function accessToken() {
+  const t = getToken();
+  if (!t) throw new AuthError();
+  if (Date.now() > t.expires - 60000) await refresh();
+  return getToken().access;
+}
+
+function logout() { store.del(K.token); location.href = REDIRECT_URI; }
+
+class AuthError extends Error { constructor() { super("Your Spotify session ended. Please sign in again."); } }
+
+// =====================================================================================
+// API
+// =====================================================================================
+async function api(path, tries = 0) {
+  const r = await fetch(API + path, { headers: { Authorization: "Bearer " + await accessToken() } });
+  if (r.status === 401 && tries < 1) { await refresh(); return api(path, tries + 1); }
+  if (r.status === 401) throw new AuthError();
+  if (r.status === 429) {
+    const body = await r.json().catch(() => ({}));
+    if (body?.error?.reason === "QUOTA_EXCEEDED") throw new Error("This app has hit Spotify's daily request limit for development-mode apps. Try again tomorrow.");
+    const wait = Number(r.headers.get("Retry-After")) || 2;
+    if (tries < 3 && wait <= 20) { await sleep(wait * 1000); return api(path, tries + 1); }
+    throw new Error("Spotify is rate-limiting requests right now. Try again in a minute.");
+  }
+  if (r.status === 403) {
+    throw new Error("Spotify refused access for this account. While the app is in development mode, its owner has to add each Spotify account (by email) under User Management in the Spotify developer dashboard.");
+  }
+  if (!r.ok) throw new Error("Spotify returned an error (" + r.status + "). Try again in a moment.");
+  return r.status === 204 ? null : r.json();
+}
+
+// =====================================================================================
+// Loading
+// =====================================================================================
+let data = null;
+let isDemo = false;
+const ui = { range: "medium_term", allArtists: false, allTracks: false, allRecent: false };
+
+async function load() {
+  show("loading");
+  try {
+    const ranges = Object.keys(RANGES);
+    const [me, recent, ...tops] = await Promise.all([
+      api("/me"),
+      api("/me/player/recently-played?limit=50"),
+      ...ranges.flatMap((r) => [
+        api(`/me/top/artists?limit=50&time_range=${r}`),
+        api(`/me/top/tracks?limit=50&time_range=${r}`),
+      ]),
+    ]);
+    data = { me, recent: recent?.items || [], top: { artists: {}, tracks: {} }, liked: null };
+    ranges.forEach((r, i) => {
+      data.top.artists[r] = tops[i * 2]?.items || [];
+      data.top.tracks[r] = tops[i * 2 + 1]?.items || [];
+    });
+    render();
+    loadLiked();
+  } catch (e) { fail(e); }
+}
+
+async function loadLiked() {
+  try {
+    const first = await api("/me/tracks?limit=50");
+    const total = first?.total || 0;
+    const items = [...(first?.items || [])];
+    const want = Math.min(total, MAX_LIKED);
+    const offsets = [];
+    for (let o = 50; o < want; o += 50) offsets.push(o);
+    for (let i = 0; i < offsets.length; i += 4) {
+      $("#libraryNote").textContent = `Loading your liked songs… ${items.length.toLocaleString()} of ${want.toLocaleString()}`;
+      const pages = await Promise.all(offsets.slice(i, i + 4).map((o) => api(`/me/tracks?limit=50&offset=${o}`)));
+      for (const p of pages) items.push(...(p?.items || []));
+    }
+    data.liked = { total, items: items.map((x) => ({ added: x.added_at })) };
+    renderLibrary();
+  } catch (e) {
+    if (e instanceof AuthError) return fail(e);
+    $("#libraryNote").textContent = "Couldn't load liked songs: " + e.message;
+  }
+}
+
+function fail(e) {
+  if (e instanceof AuthError) { store.del(K.token); showSignin(e.message); return; }
+  $("#errorText").textContent = e.message || String(e);
+  show("error");
+}
+
+// =====================================================================================
+// Rendering
+// =====================================================================================
+function render() {
+  const me = data.me || {};
+  $("#meName").textContent = me.display_name || me.id || "You";
+  $("#meAvatar").innerHTML = imgUrl(me.images, 60) ? `<img class="avatar" src="${esc(imgUrl(me.images, 60))}" alt="">` : "";
+  $("#demoBanner").hidden = !isDemo;
+  $("#logoutBtn").hidden = isDemo;
+  $("#refreshBtn").hidden = isDemo;
+  renderRange();
+  renderTrends();
+  renderRecent();
+  renderLibrary();
+  show("dash");
+}
+
+function renderRange() {
+  const r = ui.range;
+  for (const b of document.querySelectorAll("#rangeSeg button")) b.setAttribute("aria-pressed", b.dataset.range === r);
+  $("#rangeLbl").textContent = "Top artists, tracks, genres and eras for " + RANGES[r].long;
+  renderTiles();
+  renderArtists();
+  renderTracks();
+  renderGenres();
+  renderEras();
+}
+
+function tile(k, v, s = "") {
+  return `<div class="tile"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>${s ? `<div class="s">${esc(s)}</div>` : ""}</div>`;
+}
+
+function renderTiles() {
+  const tracks = data.top.tracks[ui.range];
+  const artists = data.top.artists[ui.range];
+  if (!tracks.length && !artists.length) {
+    $("#rangeTiles").innerHTML = `<div class="tile" style="grid-column:1/-1"><div class="k">Not enough listening in ${RANGES[ui.range].long} for Spotify to rank yet.</div></div>`;
+    return;
+  }
+  const uniq = new Set(tracks.flatMap((t) => (t.artists || []).map((a) => a.id))).size;
+  const years = tracks.map((t) => yearOf(t.album)).filter(Boolean);
+  const avg = tracks.length ? tracks.reduce((s, t) => s + (t.duration_ms || 0), 0) / tracks.length : 0;
+  const thisYear = new Date().getFullYear();
+  const fresh = years.length ? Math.round(years.filter((y) => y >= thisYear - 1).length / years.length * 100) : null;
+  $("#rangeTiles").innerHTML = [
+    tile("#1 artist", artists[0]?.name || "–"),
+    tile("Artists in your top tracks", uniq ? String(uniq) : "–", tracks.length ? `across ${tracks.length} tracks` : ""),
+    tile("Typical release year", median(years) ?? "–", fresh != null ? `${fresh}% released ${thisYear - 1} or later` : ""),
+    tile("Average track length", avg ? fmtDur(avg) : "–"),
+  ].join("");
+}
+
+function renderArtists() {
+  const list = data.top.artists[ui.range];
+  const shown = ui.allArtists ? list : list.slice(0, 12);
+  $("#artistsNote").textContent = list.length ? `${list.length} ranked` : "";
+  $("#topArtists").innerHTML = shown.length ? shown.map((a, i) => {
+    const href = spLink(a);
+    const tag = href ? `a href="${esc(href)}" target="_blank" rel="noopener"` : "div";
+    return `<${tag} class="artist">${pic(a.images, a.name, "pic", 200)}<span class="name">${esc(a.name)}</span><span class="rank">#${i + 1}</span></${tag.split(" ")[0]}>`;
+  }).join("") : `<p class="empty">No top artists for this range yet.</p>`;
+  toggleMore("#moreArtists", list.length, 12, ui.allArtists, "artists");
+}
+
+function trackRow(t, n, meta) {
+  const href = spLink(t);
+  const title = href ? `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(t.name)}</a>` : `<span class="title">${esc(t.name)}</span>`;
+  return `<li>${n != null ? `<span class="n">${n}</span>` : ""}${pic(t.album?.images, t.album?.name || t.name, "art", 60)}
+    <span class="t">${title}<span class="by">${esc(artistNames(t))}</span></span><span class="m">${esc(meta)}</span></li>`;
+}
+
+function renderTracks() {
+  const list = data.top.tracks[ui.range];
+  const shown = ui.allTracks ? list : list.slice(0, 10);
+  $("#topTracks").innerHTML = shown.length
+    ? shown.map((t, i) => trackRow(t, i + 1, fmtDur(t.duration_ms || 0))).join("")
+    : `<li class="empty">No top tracks for this range yet.</li>`;
+  toggleMore("#moreTracks", list.length, 10, ui.allTracks, "tracks");
+}
+
+function toggleMore(sel, len, cut, open, word) {
+  const b = $(sel);
+  b.hidden = len <= cut;
+  b.textContent = open ? "Show fewer" : `Show all ${len} ${word}`;
+}
+
+function hbars(rows) {
+  const max = Math.max(...rows.map((r) => r.value), 1e-9);
+  return `<div class="hbars">${rows.map((r) =>
+    `<div class="hbar" data-tip="${esc(r.tip)}" role="img" aria-label="${esc(r.tip)}">
+      <span class="hl">${esc(r.label)}</span><span class="track"><span class="fill" style="width:${(r.value / max * 100).toFixed(1)}%"></span></span><span class="hv">${esc(r.display)}</span></div>`).join("")}</div>`;
+}
+
+function columns(items, height = 140) {
+  const max = Math.max(...items.map((i) => i.value), 1);
+  return `<div class="cols" style="--h:${height}px">${items.map((i) =>
+    `<div class="col" data-tip="${esc(i.tip)}" role="img" aria-label="${esc(i.tip)}"><div class="bar" style="height:${(i.value / max * 100).toFixed(1)}%"></div>${i.tick ? `<span class="tick">${esc(i.tick)}</span>` : ""}</div>`).join("")}</div>`;
+}
+
+function renderGenres() {
+  const artists = data.top.artists[ui.range];
+  const hasGenres = artists.some((a) => Array.isArray(a.genres) && a.genres.length);
+  if (!artists.length) { $("#genres").innerHTML = `<p class="empty">No top artists for this range yet.</p>`; return; }
+  if (!hasGenres) {
+    $("#genres").innerHTML = `<p class="empty">Spotify isn't sending genre data for your artists. Since early 2026 it leaves genres out for smaller apps like this one; this chart fills in automatically if that changes.</p>`;
+    return;
+  }
+  // Each artist contributes a rank weight (top artist counts most), split across its genres.
+  const score = new Map();
+  let total = 0;
+  artists.forEach((a, i) => {
+    const g = a.genres || [];
+    if (!g.length) return;
+    const w = artists.length - i;
+    total += w;
+    for (const name of g) score.set(name, (score.get(name) || 0) + w / g.length);
+  });
+  const counts = new Map();
+  artists.forEach((a) => (a.genres || []).forEach((g) => counts.set(g, (counts.get(g) || 0) + 1)));
+  const rows = [...score].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([g, s]) => {
+    const pct = s / total * 100;
+    return { label: g, value: pct, display: (pct < 1 ? pct.toFixed(1) : Math.round(pct)) + "%", tip: `${g}\n${plural(counts.get(g), "artist")} in your top ${artists.length}` };
+  });
+  $("#genres").innerHTML = hbars(rows);
+}
+
+function renderEras() {
+  const tracks = data.top.tracks[ui.range];
+  const years = tracks.map((t) => yearOf(t.album)).filter(Boolean);
+  if (!years.length) { $("#eras").innerHTML = `<p class="empty">No top tracks for this range yet.</p>`; return; }
+  const decs = years.map((y) => Math.floor(y / 10) * 10);
+  const lo = Math.min(...decs), hi = Math.max(...decs);
+  const items = [];
+  for (let d = lo; d <= hi; d += 10) {
+    const n = decs.filter((x) => x === d).length;
+    items.push({ value: n, tick: (d % 100 === 0 && d >= 2000 ? d : "'" + String(d).slice(2)) + "s", tip: `${d}s\n${plural(n, "track")} of your top ${tracks.length}` });
+  }
+  const top = items.reduce((a, b) => (b.value > a.value ? b : a));
+  $("#eras").innerHTML = `<p class="peak">Mostly ${esc(top.tip.split("\n")[0])}</p>` + columns(items, 110);
+}
+
+function renderTrends() {
+  const S = data.top.artists.short_term, M = data.top.artists.medium_term, L = data.top.artists.long_term;
+  const rank = (arr) => new Map(arr.map((a, i) => [a.id, i + 1]));
+  const rS = rank(S), rM = rank(M), rL = rank(L);
+
+  const newIn = S.filter((a) => !rL.has(a.id)).slice(0, 5).map((a) => ({ a, meta: `#${rS.get(a.id)} now` }));
+  const climbing = S.filter((a) => rL.has(a.id))
+    .map((a) => ({ a, d: rL.get(a.id) - rS.get(a.id) }))
+    .filter((x) => x.d >= 3).sort((x, y) => y.d - x.d).slice(0, 5)
+    .map(({ a, d }) => ({ a, meta: `<span class="up">↑${d}</span> to #${rS.get(a.id)}`, html: true }));
+  const fading = L.slice(0, 25).filter((a) => !rS.has(a.id)).slice(0, 5).map((a) => ({ a, meta: `was #${rL.get(a.id)}` }));
+  const staples = L.filter((a) => (rS.get(a.id) || 99) <= 15 && (rM.get(a.id) || 99) <= 15 && rL.get(a.id) <= 15).slice(0, 5)
+    .map((a) => ({ a, meta: `#${rL.get(a.id)} all year` }));
+
+  const block = (title, sub, rows, empty) => `<div class="trend"><h3>${title}</h3><p class="note">${sub}</p>${
+    rows.length ? `<ul class="mini">${rows.map(({ a, meta, html }) => {
+      const href = spLink(a);
+      const nm = href ? `<a class="nm" href="${esc(href)}" target="_blank" rel="noopener">${esc(a.name)}</a>` : `<span class="nm">${esc(a.name)}</span>`;
+      return `<li>${pic(a.images, a.name, "pic", 60)}${nm}<span class="dl">${html ? meta : esc(meta)}</span></li>`;
+    }).join("")}</ul>` : `<p class="empty">${empty}</p>`}</div>`;
+
+  $("#trends").innerHTML = (S.length && L.length) ? [
+    block("New in rotation", "In your top 50 now, not over the year", newIn, "Nobody new lately."),
+    block("Climbing", "Rising fastest in your ranking", climbing, "No big movers right now."),
+    block("Fading", "Year favorites missing this month", fading, "Your favorites are holding steady."),
+    block("Staples", "Top 15 in every time range", staples, "No artist is top 15 in all three ranges."),
+  ].join("") : `<p class="empty">Not enough listening history to compare yet.</p>`;
+}
+
+function renderRecent() {
+  const plays = data.recent.map((p) => ({ ...p, at: new Date(p.played_at) })).sort((a, b) => b.at - a.at);
+  if (!plays.length) {
+    $("#clockNote").textContent = "";
+    $("#clock").innerHTML = `<p class="empty">No recent plays yet.</p>`;
+    $("#recent").innerHTML = `<li class="empty">Nothing played recently.</li>`;
+    $("#moreRecent").hidden = true;
+    return;
+  }
+  const hours = Array(24).fill(0);
+  plays.forEach((p) => hours[p.at.getHours()]++);
+  const spanDays = Math.max(1, Math.round((plays[0].at - plays[plays.length - 1].at) / 86400000));
+  $("#clockNote").textContent = `Your last ${plays.length} plays by hour of day, over ${plural(spanDays, "day")} (Spotify only shares the latest 50)`;
+  const peak = hours.indexOf(Math.max(...hours));
+  $("#clock").innerHTML = `<p class="peak">Busiest around ${hourLabel(peak)}</p>` + columns(hours.map((n, h) => ({
+    value: n, tick: h % 6 === 0 ? hourLabel(h).replace(" ", "").toLowerCase() : "", tip: `${hourLabel(h)}–${hourLabel((h + 1) % 24)}\n${plural(n, "play")}`,
+  })), 120);
+
+  // Note tracks played more than once in this window.
+  const counts = new Map();
+  plays.forEach((p) => counts.set(p.track.id, (counts.get(p.track.id) || 0) + 1));
+  const shown = ui.allRecent ? plays : plays.slice(0, 8);
+  $("#recent").innerHTML = shown.map((p) => {
+    const c = counts.get(p.track.id);
+    return trackRow(p.track, null, ago(p.at) + (c > 1 ? ` · ×${c}` : ""));
+  }).join("");
+  toggleMore("#moreRecent", plays.length, 8, ui.allRecent, "plays");
+}
+
+function renderLibrary() {
+  if (!data.liked) return;
+  const dates = data.liked.items.map((x) => new Date(x.added)).filter((d) => !isNaN(d)).sort((a, b) => a - b);
+  const { total } = data.liked;
+  if (!dates.length) {
+    $("#libraryNote").textContent = "No liked songs yet.";
+    $("#libraryTiles").innerHTML = ""; $("#library").innerHTML = "";
+    return;
+  }
+  const first = dates[0], last = new Date();
+  const months = (last.getFullYear() - first.getFullYear()) * 12 + last.getMonth() - first.getMonth() + 1;
+  let items, unit;
+  if (months <= 36) {
+    unit = "month";
+    const m = new Map();
+    dates.forEach((d) => { const k = d.getFullYear() * 12 + d.getMonth(); m.set(k, (m.get(k) || 0) + 1); });
+    const start = first.getFullYear() * 12 + first.getMonth();
+    items = [];
+    for (let k = start; k < start + months; k++) {
+      const d = new Date(Math.floor(k / 12), k % 12, 1);
+      const label = d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
+      items.push({ value: m.get(k) || 0, tick: d.getMonth() === 0 ? String(d.getFullYear()) : "", tip: `${label}\n${plural(m.get(k) || 0, "song")} liked`, label });
+    }
+    if (!items.some((i) => i.tick)) items[0].tick = items[0].label;
+  } else {
+    unit = "year";
+    const m = new Map();
+    dates.forEach((d) => m.set(d.getFullYear(), (m.get(d.getFullYear()) || 0) + 1));
+    items = [];
+    const span = last.getFullYear() - first.getFullYear();
+    const every = span > 14 ? 4 : span > 7 ? 2 : 1;
+    for (let y = first.getFullYear(); y <= last.getFullYear(); y++) {
+      items.push({ value: m.get(y) || 0, tick: (y - first.getFullYear()) % every === 0 ? "'" + String(y).slice(2) : "", tip: `${y}\n${plural(m.get(y) || 0, "song")} liked`, label: String(y) });
+    }
+  }
+  const best = items.reduce((a, b) => (b.value > a.value ? b : a));
+  const lastYear = dates.filter((d) => d > Date.now() - 365 * 86400000).length;
+  const partial = total > dates.length;
+  $("#libraryNote").textContent = `Songs you liked per ${unit}` + (partial ? ` (your ${dates.length.toLocaleString()} most recent)` : "");
+  $("#libraryTiles").innerHTML = [
+    tile("Liked songs", total.toLocaleString()),
+    tile("Liked in the last year", lastYear.toLocaleString()),
+    tile(`Busiest ${unit}`, best.label, plural(best.value, "song")),
+    partial ? "" : tile("First like", first.toLocaleDateString(undefined, { month: "short", year: "numeric" })),
+  ].join("");
+  $("#library").innerHTML = columns(items, 150);
+}
+
+// =====================================================================================
+// Tooltip (hover on desktop, tap on touch)
+// =====================================================================================
+const tip = $("#tip");
+let tipFor = null;
+function showTip(el) {
+  tipFor = el;
+  tip.textContent = el.dataset.tip;
+  tip.hidden = false;
+  const r = el.getBoundingClientRect();
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = r.left + r.width / 2 - tw / 2;
+  x = Math.max(8, Math.min(x, innerWidth - tw - 8));
+  let y = r.top - th - 8;
+  if (y < 8) y = r.bottom + 8;
+  tip.style.left = x + "px";
+  tip.style.top = y + "px";
+}
+function hideTip() { tip.hidden = true; tipFor = null; }
+document.addEventListener("pointerover", (e) => {
+  if (e.pointerType === "touch") return;
+  const t = e.target.closest("[data-tip]");
+  t ? showTip(t) : hideTip();
+});
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-tip]");
+  if (t && t !== tipFor) showTip(t); else hideTip();
+});
+addEventListener("scroll", hideTip, { passive: true });
+
+// =====================================================================================
+// Demo data (made-up artists)
+// =====================================================================================
+function demoData() {
+  let seed = 42;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const pick = (a) => a[Math.floor(rnd() * a.length)];
+  const syl = ["lu", "mar", "vel", "ko", "ra", "sen", "tia", "dor", "fen", "ix", "oa", "bel", "nim", "sol", "qua", "zer", "pal", "rin", "ash", "mo"];
+  const word = () => { let w = ""; const n = 2 + (rnd() < 0.4); for (let i = 0; i < n; i++) w += pick(syl); return w[0].toUpperCase() + w.slice(1); };
+  const genres = ["indie pop", "dream pop", "neo soul", "alternative r&b", "bedroom pop", "shoegaze", "jazz rap", "art rock", "synthwave", "indie folk", "deep house", "chamber pop", "post-punk", "lo-fi beats"];
+  const artists = Array.from({ length: 90 }, (_, i) => {
+    const r = rnd();
+    const name = r < 0.25 ? "The " + word() + "s" : r < 0.55 ? word() + " " + word() : word();
+    const g = new Set([pick(genres.slice(0, 8)), pick(genres)]);
+    if (rnd() < 0.3) g.add(pick(genres));
+    return { id: "a" + i, name, genres: [...g], images: [], base: rnd() };
+  });
+  const rankBy = (noise, boost) => [...artists]
+    .map((a) => ({ a, s: a.base + rnd() * noise + (boost(a) ? 0.6 : 0) }))
+    .sort((x, y) => y.s - x.s).slice(0, 50).map((x) => x.a);
+  const top = {
+    artists: {
+      long_term: rankBy(0.15, () => false),
+      medium_term: rankBy(0.35, (a) => a.id.endsWith("7")),
+      short_term: rankBy(0.6, (a) => a.id.endsWith("7") || a.id.endsWith("3")),
+    },
+    tracks: {},
+  };
+  const tracks = Array.from({ length: 200 }, (_, i) => {
+    const a = artists[Math.floor(Math.pow(rnd(), 1.6) * artists.length)];
+    const y = rnd() < 0.55 ? 2019 + Math.floor(rnd() * 8) : 1968 + Math.floor(rnd() * 50);
+    return { id: "t" + i, name: word() + (rnd() < 0.5 ? " " + word() : ""), artists: [a], duration_ms: 140000 + rnd() * 190000, album: { name: word(), images: [], release_date: y + "-01-01" }, base: rnd() };
+  });
+  for (const [r, n] of [["long_term", 0.2], ["medium_term", 0.4], ["short_term", 0.7]]) {
+    top.tracks[r] = [...tracks].map((t) => ({ t, s: t.base + rnd() * n + (t.album.release_date >= (r === "short_term" ? "2025" : "2099") ? 0.3 : 0) }))
+      .sort((x, y) => y.s - x.s).slice(0, 50).map((x) => x.t);
+  }
+  const recent = [];
+  let t = Date.now() - 20 * 60000;
+  const weight = [1, 0, 0, 0, 0, 0, 0, 2, 4, 5, 3, 2, 3, 2, 2, 3, 4, 5, 6, 7, 8, 7, 5, 3];
+  while (recent.length < 50) {
+    t -= 3 * 60000 + rnd() * 9 * 60000;
+    const h = new Date(t).getHours();
+    if (rnd() * 8 > weight[h]) { t -= 30 * 60000; continue; }
+    recent.push({ played_at: new Date(t).toISOString(), track: pick(top.tracks.short_term.slice(0, 30)) });
+  }
+  const liked = [];
+  const start = new Date(2017, 3, 1).getTime();
+  for (let i = 0; i < 1460; i++) {
+    const f = Math.pow(rnd(), 0.75);
+    liked.push({ added: new Date(start + f * (Date.now() - start)).toISOString() });
+  }
+  return { me: { display_name: "Sample listener", images: [] }, top, recent, liked: { total: liked.length, items: liked } };
+}
+
+// =====================================================================================
+// Wiring
+// =====================================================================================
+function showSignin(msg) {
+  show("signin");
+  signinError(msg);
+}
+function signinError(msg) {
+  const el = $("#signinErr");
+  el.hidden = !msg;
+  el.textContent = msg || "";
+}
+function showSetup() {
+  $("#redirectUri").textContent = REDIRECT_URI;
+  show("setup");
+}
+
+$("#copyRedirect").onclick = async () => {
+  try { await navigator.clipboard.writeText(REDIRECT_URI); $("#copyRedirect").textContent = "Copied"; }
+  catch { $("#copyRedirect").textContent = "Select and copy it"; }
+};
+$("#saveClientId").onclick = () => {
+  const v = $("#clientIdInput").value.trim();
+  if (!/^[0-9a-f]{32}$/i.test(v)) { $("#clientIdInput").focus(); $("#clientIdInput").style.borderColor = "var(--danger)"; return; }
+  store.set(K.client, v);
+  showSignin();
+};
+$("#loginBtn").onclick = login;
+$("#logoutBtn").onclick = logout;
+$("#refreshBtn").onclick = load;
+$("#errorRetry").onclick = () => (getToken() ? load() : showSignin());
+$("#rangeSeg").onclick = (e) => {
+  const b = e.target.closest("button[data-range]");
+  if (!b) return;
+  ui.range = b.dataset.range;
+  renderRange();
+};
+$("#moreArtists").onclick = () => { ui.allArtists = !ui.allArtists; renderArtists(); };
+$("#moreTracks").onclick = () => { ui.allTracks = !ui.allTracks; renderTracks(); };
+$("#moreRecent").onclick = () => { ui.allRecent = !ui.allRecent; renderRecent(); };
+
+(async function main() {
+  const q = new URLSearchParams(location.search);
+  if (q.has("demo")) { isDemo = true; data = demoData(); render(); return; }
+  if (q.has("error") || q.has("code")) history.replaceState(null, "", location.pathname);
+  if (q.get("error")) { showSignin(q.get("error") === "access_denied" ? "Sign-in was cancelled." : "Spotify sign-in failed: " + q.get("error")); return; }
+  if (q.get("code")) {
+    try { await exchangeCode(q.get("code"), q.get("state")); }
+    catch (e) { showSignin(e.message); return; }
+  }
+  if (getToken()) return load();
+  clientId() ? showSignin() : showSetup();
+})();
+</script>
+</body>
+</html>
