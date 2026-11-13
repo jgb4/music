@@ -40,9 +40,3 @@ Its Redirect URIs must match exactly: `https://<pages-host>/music/spotify-stats/
 `http://127.0.0.1:8765/spotify-stats/` (Spotify rejects `localhost`; `.claude/launch.json` serves on 127.0.0.1:8765).
 Development Mode (2026 rules): the app owner needs Premium, at most 5 allowlisted users,
 no batch `GET /artists`, and artist genres/popularity may be missing; the page degrades gracefully.
-Time ranges: "4 weeks / 6 months / 1 year" are Spotify's own rankings (`time_range`), the only windows the API has;
-`long_term` is Spotify's and refreshes slowly. "All time" and "Custom" come from the user's imported
-"Download your data" history (Extended streaming history ZIP, or the last-year Account data), parsed in the
-browser with JSZip and kept in IndexedDB (`spstats` → `history`). Covers/photos for history rows are looked up
-one at a time (`GET /tracks/{id}`, `GET /artists/{id}`) and cached in localStorage (`spstats.img`).
-`?demo` shows made-up data, including three years of fake history.

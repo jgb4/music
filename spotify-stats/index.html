@@ -63,21 +63,11 @@
   .avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none; }
 
   /* Range switch */
-  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 9px; padding: 3px; background: var(--surface); gap: 2px; max-width: 100%; flex-wrap: wrap; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 9px; padding: 3px; background: var(--surface); gap: 2px; max-width: 100%; }
   .seg button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 14px; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
   .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); font-weight: 600; }
   .sticky { position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
   .sticky .lbl { color: var(--muted); font-size: 13px; }
-  .custom { display: flex; gap: 8px 10px; align-items: center; flex-wrap: wrap; margin: 0 0 8px; font-size: 14px; color: var(--muted); }
-  .custom input[type=date] { font: inherit; font-size: 14px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text); color-scheme: light dark; }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip { border: 1px solid var(--border); background: var(--surface); color: var(--muted); font: inherit; font-size: 13px; padding: 3px 10px; border-radius: 99px; cursor: pointer; }
-  .chip:hover { border-color: var(--accent); }
-  .chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 600; }
-  .hist-info { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
-  .drop { border: 2px dashed var(--border); border-radius: 10px; padding: 22px 16px; text-align: center; color: var(--muted); cursor: pointer; margin-top: 14px; }
-  .drop strong { color: var(--accent); }
-  .drop.over, .drop:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
 
   /* Stat tiles */
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
@@ -132,8 +122,6 @@
           background: repeating-linear-gradient(to top, transparent 0 calc(25% - 1px), var(--grid) calc(25% - 1px) 25%); }
   .col { flex: 1; height: 100%; display: flex; align-items: flex-end; position: relative; min-width: 0; }
   .col .bar { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; }
-  .cols.dense { gap: 1px; }
-  .cols.dense .bar { border-radius: 2px 2px 0 0; }
   .col:hover .bar { opacity: .8; }
   .col .tick { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 5px; font-size: 11px; color: var(--muted); white-space: nowrap; }
   .peak { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
@@ -212,81 +200,42 @@
       <div class="seg" role="group" aria-label="Time range" id="rangeSeg">
         <button data-range="short_term">4 weeks</button>
         <button data-range="medium_term" aria-pressed="true">6 months</button>
-        <button data-range="long_term">1 year</button>
-        <button data-range="all">All time</button>
-        <button data-range="custom">Custom</button>
+        <button data-range="long_term">12 months</button>
       </div>
       <span class="lbl" id="rangeLbl"></span>
     </div>
 
-    <div class="custom" id="customRow" hidden>
-      <label>From <input type="date" id="fromDate"></label>
-      <label>to <input type="date" id="toDate"></label>
-      <div class="chips" id="yearChips"></div>
-    </div>
-    <p class="hist-info" id="histInfo" hidden></p>
-
-    <div class="card" id="importCard" hidden>
-      <h2>Import your listening history</h2>
-      <p class="note">Spotify's live data only covers fixed windows: about 4 weeks, 6 months and a year. For all-time stats and any date range you pick, add the full history Spotify keeps for you:</p>
-      <ol class="steps">
-        <li>On your <a href="https://www.spotify.com/account/privacy/" target="_blank" rel="noopener">Spotify privacy settings</a> page, under <strong>Download your data</strong>, tick <strong>Extended streaming history</strong> and request it.</li>
-        <li>Confirm the email from Spotify. They send a download link when it's ready, usually within a few days (it can take up to 30).</li>
-        <li>Drop the ZIP file here. It's read in this browser and never uploaded, and the page remembers it for next time.</li>
-      </ol>
-      <div class="drop" id="histDrop" tabindex="0" role="button"><strong>Choose your Spotify ZIP</strong> or drop it here<br><span class="note">The quicker “Account data” download works too, but it only covers the last year.</span></div>
-      <p class="note" id="importStatus" style="margin:10px 0 0" aria-live="polite"></p>
-    </div>
-    <input type="file" id="histFile" accept=".zip,.json,application/zip,application/json" multiple hidden>
-
-
     <div class="tiles" id="rangeTiles"></div>
 
-    <div class="card" id="timelineCard" hidden>
-      <h2>Listening over time</h2>
-      <p class="note" id="timelineNote"></p>
-      <div id="timeline"></div>
-    </div>
-
-    <div class="card" id="artistsCard">
+    <div class="card">
       <div class="head"><h2>Top artists</h2><p class="note" id="artistsNote"></p></div>
       <div class="artists" id="topArtists"></div>
       <div class="more"><button class="link-btn" id="moreArtists"></button></div>
     </div>
 
-    <div class="grid2" id="tracksGrid">
+    <div class="grid2">
       <div class="card">
-        <div class="head"><h2>Top tracks</h2><p class="note" id="tracksNote"></p></div>
+        <div class="head"><h2>Top tracks</h2></div>
         <ol class="tracks" id="topTracks"></ol>
         <div class="more"><button class="link-btn" id="moreTracks"></button></div>
       </div>
       <div>
-        <div class="card" id="genresCard">
+        <div class="card">
           <h2>Top genres</h2>
           <p class="note">Share of your top 50 artists, weighted by rank</p>
           <div id="genres"></div>
         </div>
-        <div class="card" id="erasCard">
+        <div class="card">
           <h2>Eras</h2>
           <p class="note">Release decade of your top 50 tracks</p>
           <div id="eras"></div>
-        </div>
-        <div class="card" id="hoursCard" hidden>
-          <h2>Time of day</h2>
-          <p class="note">Listening time by hour in this range (your time zone)</p>
-          <div id="histHours"></div>
-        </div>
-        <div class="card" id="daysCard" hidden>
-          <h2>Day of week</h2>
-          <p class="note">Share of listening time in this range</p>
-          <div id="histDays"></div>
         </div>
       </div>
     </div>
 
     <div class="card">
       <h2>How your taste is shifting</h2>
-      <p class="note">Spotify's ranking of your top artists: the last 4 weeks compared with roughly the last year</p>
+      <p class="note">Your top artists from the last 4 weeks compared with the last 12 months</p>
       <div class="trends" id="trends"></div>
     </div>
 
@@ -336,14 +285,8 @@ const API = "https://api.spotify.com/v1";
 const RANGES = {
   short_term:  { label: "4 weeks",   long: "the last 4 weeks" },
   medium_term: { label: "6 months",  long: "the last 6 months" },
-  long_term:   { label: "1 year",    long: "roughly the last year" },
+  long_term:   { label: "12 months", long: "the last 12 months" },
 };
-const RANGE_NOTES = {
-  short_term: "Spotify's ranking for the last 4 weeks",
-  medium_term: "Spotify's ranking for the last 6 months",
-  long_term: "Spotify's ranking for roughly the last year. Spotify refreshes this one slowly, so it can lag behind",
-};
-const JSZIP_URL = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 const MAX_LIKED = 5000; // cap on liked songs fetched for the library chart
 
 // =====================================================================================
@@ -503,8 +446,7 @@ async function api(path, tries = 0) {
 // =====================================================================================
 let data = null;
 let isDemo = false;
-const ui = { range: "medium_term", allArtists: false, allTracks: false, allRecent: false, from: null, to: null };
-let hist = null; // imported streaming history: { kind, tracks: [[name, artist, album, uri]], t, ms, ti }
+const ui = { range: "medium_term", allArtists: false, allTracks: false, allRecent: false };
 
 async function load() {
   show("loading");
@@ -523,7 +465,6 @@ async function load() {
       data.top.artists[r] = tops[i * 2]?.items || [];
       data.top.tracks[r] = tops[i * 2 + 1]?.items || [];
     });
-    if (!hist) hist = await idb.get("history").catch(() => null) || null;
     render();
     loadLiked();
   } catch (e) { fail(e); }
@@ -576,28 +517,12 @@ function render() {
 function renderRange() {
   const r = ui.range;
   for (const b of document.querySelectorAll("#rangeSeg button")) b.setAttribute("aria-pressed", b.dataset.range === r);
-  const live = r in RANGES;
-  const fromHist = !live && !!hist;
-  $("#importCard").hidden = live || !!hist;
-  $("#customRow").hidden = r !== "custom" || !hist;
-  $("#histInfo").hidden = !fromHist;
-  for (const id of ["#rangeTiles", "#artistsCard", "#tracksGrid"]) $(id).hidden = !live && !hist;
-  $("#timelineCard").hidden = $("#hoursCard").hidden = $("#daysCard").hidden = !fromHist;
-  $("#genresCard").hidden = $("#erasCard").hidden = !live;
-  if (live) {
-    $("#rangeLbl").textContent = RANGE_NOTES[r];
-    renderTiles();
-    renderArtists(data.top.artists[r], (a, i) => `#${i + 1}`);
-    renderTracks(data.top.tracks[r], (t) => fmtDur(t.duration_ms || 0), "");
-    renderGenres();
-    renderEras();
-    return;
-  }
-  if (!hist) {
-    $("#rangeLbl").textContent = r === "all" ? "All-time stats come from your Spotify data download" : "Custom date ranges come from your Spotify data download";
-    return;
-  }
-  renderHistRange();
+  $("#rangeLbl").textContent = "Top artists, tracks, genres and eras for " + RANGES[r].long;
+  renderTiles();
+  renderArtists();
+  renderTracks();
+  renderGenres();
+  renderEras();
 }
 
 function tile(k, v, s = "") {
@@ -624,13 +549,14 @@ function renderTiles() {
   ].join("");
 }
 
-function renderArtists(list, sub) {
+function renderArtists() {
+  const list = data.top.artists[ui.range];
   const shown = ui.allArtists ? list : list.slice(0, 12);
   $("#artistsNote").textContent = list.length ? `${list.length} ranked` : "";
   $("#topArtists").innerHTML = shown.length ? shown.map((a, i) => {
     const href = spLink(a);
     const tag = href ? `a href="${esc(href)}" target="_blank" rel="noopener"` : "div";
-    return `<${tag} class="artist">${pic(a.images, a.name, "pic", 200)}<span class="name">${esc(a.name)}</span><span class="rank">${esc(sub(a, i))}</span></${tag.split(" ")[0]}>`;
+    return `<${tag} class="artist">${pic(a.images, a.name, "pic", 200)}<span class="name">${esc(a.name)}</span><span class="rank">#${i + 1}</span></${tag.split(" ")[0]}>`;
   }).join("") : `<p class="empty">No top artists for this range yet.</p>`;
   toggleMore("#moreArtists", list.length, 12, ui.allArtists, "artists");
 }
@@ -642,11 +568,11 @@ function trackRow(t, n, meta) {
     <span class="t">${title}<span class="by">${esc(artistNames(t))}</span></span><span class="m">${esc(meta)}</span></li>`;
 }
 
-function renderTracks(list, meta, note) {
+function renderTracks() {
+  const list = data.top.tracks[ui.range];
   const shown = ui.allTracks ? list : list.slice(0, 10);
-  $("#tracksNote").textContent = note;
   $("#topTracks").innerHTML = shown.length
-    ? shown.map((t, i) => trackRow(t, i + 1, meta(t))).join("")
+    ? shown.map((t, i) => trackRow(t, i + 1, fmtDur(t.duration_ms || 0))).join("")
     : `<li class="empty">No top tracks for this range yet.</li>`;
   toggleMore("#moreTracks", list.length, 10, ui.allTracks, "tracks");
 }
@@ -666,7 +592,7 @@ function hbars(rows) {
 
 function columns(items, height = 140) {
   const max = Math.max(...items.map((i) => i.value), 1);
-  return `<div class="cols${items.length > 40 ? " dense" : ""}" style="--h:${height}px">${items.map((i) =>
+  return `<div class="cols" style="--h:${height}px">${items.map((i) =>
     `<div class="col" data-tip="${esc(i.tip)}" role="img" aria-label="${esc(i.tip)}"><div class="bar" style="height:${(i.value / max * 100).toFixed(1)}%"></div>${i.tick ? `<span class="tick">${esc(i.tick)}</span>` : ""}</div>`).join("")}</div>`;
 }
 
@@ -818,327 +744,6 @@ function renderLibrary() {
   $("#library").innerHTML = columns(items, 150);
 }
 
-
-// =====================================================================================
-// Streaming history (imported from Spotify's "Download your data"), for All time / Custom
-// =====================================================================================
-const DAY = 86400000;
-const idb = {
-  open() {
-    return new Promise((res, rej) => {
-      const r = indexedDB.open("spstats", 1);
-      r.onupgradeneeded = () => r.result.createObjectStore("kv");
-      r.onsuccess = () => res(r.result);
-      r.onerror = () => rej(r.error);
-    });
-  },
-  async run(mode, fn) {
-    const db = await this.open();
-    return new Promise((res, rej) => {
-      const q = fn(db.transaction("kv", mode).objectStore("kv"));
-      q.onsuccess = () => res(q.result);
-      q.onerror = () => rej(q.error);
-    });
-  },
-  get(k) { return this.run("readonly", (s) => s.get(k)); },
-  set(k, v) { return this.run("readwrite", (s) => s.put(v, k)); },
-  del(k) { return this.run("readwrite", (s) => s.delete(k)); },
-};
-
-function fmtHours(ms) {
-  const h = ms / 3600000;
-  if (h < 1) return Math.round(ms / 60000) + " min";
-  if (h < 10) return h.toFixed(1) + " h";
-  return Math.round(h).toLocaleString() + " h";
-}
-const fmtDate = (ms, o = { month: "short", day: "numeric", year: "numeric" }) => new Date(ms).toLocaleDateString(undefined, o);
-const dayStart = (ms) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
-const toInput = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
-const fromInput = (v) => { const [y, m, d] = v.split("-").map(Number); return new Date(y, m - 1, d).getTime(); };
-function lowerBound(arr, x) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < x) lo = m + 1; else hi = m; } return lo; }
-const histStart = () => dayStart(hist.t[0]);
-const histEnd = () => { const d = new Date(dayStart(hist.t[hist.t.length - 1])); d.setDate(d.getDate() + 1); return d.getTime(); }; // exclusive
-
-// [from, to) in ms for the current All time / Custom selection
-function histBounds() {
-  if (ui.range === "all") return [histStart(), histEnd()];
-  if (ui.from == null || ui.to == null) { ui.to = histEnd(); ui.from = Math.max(histStart(), ui.to - 90 * DAY); }
-  return [ui.from, ui.to];
-}
-
-function renderCustomRow() {
-  const f = $("#fromDate"), t = $("#toDate");
-  f.min = t.min = toInput(histStart());
-  f.max = t.max = toInput(histEnd() - DAY);
-  f.value = toInput(ui.from);
-  t.value = toInput(ui.to - DAY);
-  const years = [];
-  for (let y = new Date(hist.t[0]).getFullYear(); y <= new Date(hist.t[hist.t.length - 1]).getFullYear(); y++) years.push(y);
-  const presets = [["Last 30 days", 30], ["Last 90 days", 90]].map(([label, n]) => {
-    const to = histEnd(), from = Math.max(histStart(), to - n * DAY);
-    return { label, from, to };
-  }).concat(years.map((y) => ({ label: String(y), from: new Date(y, 0, 1).getTime(), to: new Date(y + 1, 0, 1).getTime() })));
-  $("#yearChips").innerHTML = presets.map((p) =>
-    `<button class="chip" data-from="${p.from}" data-to="${p.to}" aria-pressed="${p.from === ui.from && p.to === ui.to}">${p.label}</button>`).join("");
-}
-
-// Lookups so history rows (names only) can borrow images and links from Spotify's API data
-const look = { artist: new Map(), track: new Map() };
-function seedLookups() {
-  const addA = (a) => { if (a?.name && (a.images?.length || !look.artist.has(a.name.toLowerCase()))) look.artist.set(a.name.toLowerCase(), a); };
-  const addT = (t) => { if (t?.id) look.track.set(t.id, t); };
-  for (const r of Object.keys(RANGES)) { (data.top.artists[r] || []).forEach(addA); (data.top.tracks[r] || []).forEach(addT); }
-  data.recent.forEach((p) => addT(p.track));
-  Object.entries(imgCache.t).forEach(([id, [img, aid]]) => { if (!look.track.has(id)) look.track.set(id, { id, album: { images: [{ url: img, width: 64 }] }, _aid: aid }); });
-}
-const trackIdOf = (uri) => (uri || "").startsWith("spotify:track:") ? uri.slice(14) : null;
-
-function renderHistRange() {
-  seedLookups();
-  if (ui.range === "custom") {
-    histBounds();
-    if (ui.to <= ui.from) ui.to = ui.from + DAY;
-    renderCustomRow();
-  }
-  const [from, to] = histBounds();
-  const lo = lowerBound(hist.t, from), hi = lowerBound(hist.t, to);
-  const end = Math.min(to, histEnd()), start = Math.max(from, histStart());
-  const kind = hist.kind === "extended" ? "Extended streaming history" : "Account data (last year only)";
-  $("#rangeLbl").textContent = `${fmtDate(from)} – ${fmtDate(to - DAY)}, from your listening history`;
-  $("#histInfo").innerHTML = `${esc(kind)}: ${esc(fmtDate(histStart()))} – ${esc(fmtDate(histEnd() - DAY))}, ${hist.t.length.toLocaleString()} streams.
-    <button class="link-btn" id="replaceHist">Import a newer download</button> · <button class="link-btn" id="removeHist">Remove</button>`;
-
-  // Aggregate
-  const byArtist = new Map(), byTrack = new Map();
-  const hours = Array(24).fill(0), days = Array(7).fill(0);
-  let total = 0, plays = 0;
-  const span = (end - start) / DAY;
-  const unit = span <= 62 ? "day" : span <= 548 ? "week" : span <= 365 * 8 ? "month" : "year";
-  const starts = bucketStarts(unit, start, end);
-  const bMs = new Float64Array(starts.length), bPlays = new Uint32Array(starts.length);
-  let b = 0;
-  for (let i = lo; i < hi; i++) {
-    const t = hist.t[i], m = hist.ms[i], ti = hist.ti[i], tr = hist.tracks[ti];
-    const p = m >= 30000 ? 1 : 0;
-    total += m; plays += p;
-    let A = byArtist.get(tr[1]); if (!A) byArtist.set(tr[1], (A = { name: tr[1], ms: 0, plays: 0 })); A.ms += m; A.plays += p;
-    let T = byTrack.get(ti); if (!T) byTrack.set(ti, (T = { ti, ms: 0, plays: 0 })); T.ms += m; T.plays += p;
-    const d = new Date(t);
-    hours[d.getHours()] += m; days[d.getDay()] += m;
-    while (b + 1 < starts.length && t >= starts[b + 1]) b++;
-    bMs[b] += m; bPlays[b] += p;
-  }
-
-  if (hi <= lo) {
-    $("#rangeTiles").innerHTML = `<div class="tile" style="grid-column:1/-1"><div class="k">No listening in your history between ${esc(fmtDate(from))} and ${esc(fmtDate(to - DAY))}. Your history covers ${esc(fmtDate(histStart()))} – ${esc(fmtDate(histEnd() - DAY))}.</div></div>`;
-    renderArtists([], () => ""); renderTracks([], () => "", "");
-    $("#timeline").innerHTML = $("#histHours").innerHTML = $("#histDays").innerHTML = `<p class="empty">Nothing in this range.</p>`;
-    $("#timelineNote").textContent = "";
-    return;
-  }
-
-  const artists = [...byArtist.values()].sort((a, b) => b.ms - a.ms).slice(0, 50);
-  const tracks = [...byTrack.values()].sort((a, b) => b.plays - a.plays || b.ms - a.ms).slice(0, 50);
-  const daysIn = Math.max(1, Math.round(span));
-
-  $("#rangeTiles").innerHTML = [
-    tile("Time listened", fmtHours(total), `about ${Math.round(total / 60000 / daysIn)} min a day`),
-    tile("Plays", plays.toLocaleString(), "30 seconds or longer"),
-    tile("Artists", byArtist.size.toLocaleString(), `${plural(byTrack.size, "different track")}`),
-    tile("#1 artist", artists[0].name, fmtHours(artists[0].ms)),
-  ].join("");
-
-  // Top artists: borrow images/links by name, else from the cached track lookup
-  const artistObjs = artists.map((a) => {
-    const known = look.artist.get(a.name.toLowerCase());
-    return { name: a.name, images: known?.images || [], external_urls: known?.external_urls, _ms: a.ms, _plays: a.plays };
-  });
-  renderArtists(artistObjs, (a, i) => `#${i + 1} · ${fmtHours(a._ms)}`);
-  $("#artistsNote").textContent = `by listening time`;
-
-  const trackObjs = tracks.map((x) => {
-    const [name, artist, album, uri] = hist.tracks[x.ti];
-    const id = trackIdOf(uri), known = id && look.track.get(id);
-    return { id, name, artists: [{ name: artist }], album: { name: album, images: known?.album?.images || [] },
-      external_urls: id ? { spotify: "https://open.spotify.com/track/" + id } : null, _plays: x.plays, _ms: x.ms };
-  });
-  renderTracks(trackObjs, (t) => plural(t._plays, "play"), "by plays");
-
-  // Listening over time
-  const fmtB = {
-    day: (ms) => fmtDate(ms, { weekday: "short", month: "short", day: "numeric", year: "numeric" }),
-    week: (ms) => "Week of " + fmtDate(ms),
-    month: (ms) => fmtDate(ms, { month: "long", year: "numeric" }),
-    year: (ms) => String(new Date(ms).getFullYear()),
-  }[unit];
-  const tickFmt = {
-    day: (ms) => fmtDate(ms, { month: "short", day: "numeric" }),
-    week: (ms) => fmtDate(ms, span <= 370 ? { month: "short", day: "numeric" } : { month: "short", year: "numeric" }),
-    month: (ms) => fmtDate(ms, { month: "short", year: "numeric" }),
-    year: (ms) => String(new Date(ms).getFullYear()),
-  }[unit];
-  const every = Math.max(1, Math.ceil(starts.length / 7));
-  const items = starts.map((s, i) => ({
-    value: bMs[i] / 3600000,
-    tick: i % every === 0 ? tickFmt(s) : "",
-    tip: `${fmtB(s)}\n${fmtHours(bMs[i])} · ${plural(bPlays[i], "play")}`,
-  }));
-  const peakI = items.reduce((bi, it, i) => (it.value > items[bi].value ? i : bi), 0);
-  $("#timelineNote").textContent = `Hours listened per ${unit}`;
-  $("#timeline").innerHTML = `<p class="peak">Peak ${unit}: ${esc(fmtB(starts[peakI]))}, ${esc(fmtHours(bMs[peakI]))}</p>` + columns(items, 150);
-
-  // Time of day and day of week
-  const hPeak = hours.indexOf(Math.max(...hours));
-  $("#histHours").innerHTML = `<p class="peak">Busiest around ${hourLabel(hPeak)}</p>` + columns(hours.map((m, h) => ({
-    value: m, tick: h % 6 === 0 ? hourLabel(h).replace(" ", "").toLowerCase() : "", tip: `${hourLabel(h)}–${hourLabel((h + 1) % 24)}\n${fmtHours(m)}`,
-  })), 110);
-  const names = [1, 2, 3, 4, 5, 6, 0].map((d) => [d, new Date(2024, 0, 7 + d).toLocaleDateString(undefined, { weekday: "long" })]);
-  $("#histDays").innerHTML = hbars(names.map(([d, nm]) => {
-    const pct = days[d] / total * 100;
-    return { label: nm, value: pct, display: Math.round(pct) + "%", tip: `${nm}\n${fmtHours(days[d])}` };
-  }));
-
-  if (!isDemo) enrichImages(artistObjs.slice(0, ui.allArtists ? 50 : 12), trackObjs.slice(0, ui.allTracks ? 50 : 10), artists);
-}
-
-function bucketStarts(unit, start, end) {
-  const d = new Date(start);
-  d.setHours(0, 0, 0, 0);
-  if (unit === "week") d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  if (unit === "month" || unit === "year") d.setDate(1);
-  if (unit === "year") d.setMonth(0);
-  const out = [];
-  while (d.getTime() < end && out.length < 2000) {
-    out.push(d.getTime());
-    if (unit === "day") d.setDate(d.getDate() + 1);
-    else if (unit === "week") d.setDate(d.getDate() + 7);
-    else if (unit === "month") d.setMonth(d.getMonth() + 1);
-    else d.setFullYear(d.getFullYear() + 1);
-  }
-  return out.length ? out : [start];
-}
-
-// Fetch cover art and artist photos for what's on screen (history files have names only).
-// Cached in this browser so each image is looked up once.
-const imgCache = (() => { try { const c = JSON.parse(store.get("spstats.img") || "null"); if (c?.t && c?.a) return c; } catch {} return { t: {}, a: {}, n: {} }; })();
-let enriching = false;
-async function enrichImages(artistObjs, trackObjs, artistAgg) {
-  if (enriching) return;
-  enriching = true;
-  let changed = false;
-  try {
-    const getTrack = async (id) => {
-      if (imgCache.t[id]) return imgCache.t[id];
-      const t = await api("/tracks/" + id);
-      const v = [imgUrl(t.album?.images, 60) || "", (t.artists || []).map((a) => [a.id, a.name])];
-      imgCache.t[id] = v; changed = true;
-      return v;
-    };
-    // Tracks on screen
-    const needT = trackObjs.filter((t) => t.id && !t.album.images.length).map((t) => t.id);
-    // For artists on screen without a photo, use one of their tracks in this range to find the artist id
-    const needA = artistObjs.filter((a) => !a.images.length).map((a) => a.name);
-    const [from, to] = histBounds();
-    const lo = lowerBound(hist.t, from), hi = lowerBound(hist.t, to);
-    const sampleTrack = new Map();
-    for (let i = lo; i < hi && sampleTrack.size < needA.length; i++) {
-      const tr = hist.tracks[hist.ti[i]];
-      if (needA.includes(tr[1]) && !sampleTrack.has(tr[1]) && trackIdOf(tr[3])) sampleTrack.set(tr[1], trackIdOf(tr[3]));
-    }
-    const jobs = [...new Set([...needT, ...sampleTrack.values()])];
-    for (let i = 0; i < jobs.length; i += 4) await Promise.all(jobs.slice(i, i + 4).map((id) => getTrack(id).catch(() => null)));
-    const artistIds = [];
-    for (const [name, tid] of sampleTrack) {
-      const pair = (imgCache.t[tid]?.[1] || []).find(([, n]) => n === name);
-      if (pair) { imgCache.n[name.toLowerCase()] = pair[0]; if (!(pair[0] in imgCache.a)) artistIds.push(pair[0]); }
-    }
-    for (let i = 0; i < artistIds.length; i += 4) {
-      await Promise.all(artistIds.slice(i, i + 4).map(async (id) => {
-        try { const a = await api("/artists/" + id); imgCache.a[id] = imgUrl(a.images, 200) || ""; changed = true; } catch {}
-      }));
-    }
-    if (changed) {
-      store.set("spstats.img", JSON.stringify(imgCache));
-      for (const [lname, id] of Object.entries(imgCache.n)) {
-        const url = imgCache.a[id];
-        if (url && !look.artist.get(lname)?.images?.length) look.artist.set(lname, { name: lname, images: [{ url, width: 300 }], external_urls: { spotify: "https://open.spotify.com/artist/" + id } });
-      }
-      if (!(ui.range in RANGES)) renderHistRange();
-    }
-  } catch (e) {
-    if (e instanceof AuthError) fail(e);
-  } finally { enriching = false; }
-}
-
-// Restore artist photos found in earlier visits
-function restoreArtistImages() {
-  for (const [lname, id] of Object.entries(imgCache.n || {})) {
-    const url = imgCache.a[id];
-    if (url) look.artist.set(lname, { name: lname, images: [{ url, width: 300 }], external_urls: { spotify: "https://open.spotify.com/artist/" + id } });
-  }
-}
-imgCache.n ||= {};
-restoreArtistImages();
-
-// ---- Import ----
-function loadScript(src) {
-  return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("Couldn't load the ZIP reader. Check your connection.")); document.head.append(s); });
-}
-
-async function importHistory(files) {
-  const status = $("#importStatus");
-  const say = (m) => { status.textContent = m; status.className = "note"; };
-  try {
-    say("Reading your files…");
-    const texts = [];
-    for (const f of files) {
-      if (/\.zip$/i.test(f.name) || f.type.includes("zip")) {
-        if (!window.JSZip) await loadScript(JSZIP_URL);
-        const zip = await JSZip.loadAsync(f);
-        for (const e of Object.values(zip.files)) {
-          if (!e.dir && /\.json$/i.test(e.name) && /stream/i.test(e.name) && !/video|podcast/i.test(e.name)) texts.push(await e.async("string"));
-        }
-      } else if (/\.json$/i.test(f.name)) texts.push(await f.text());
-    }
-    const ext = [], basic = [];
-    for (const txt of texts) {
-      let arr; try { arr = JSON.parse(txt); } catch { continue; }
-      if (!Array.isArray(arr)) continue;
-      for (const r of arr) {
-        if (!r) continue;
-        if ("ts" in r && "ms_played" in r) {
-          if (!r.master_metadata_track_name) continue; // podcasts, audiobooks
-          ext.push([Date.parse(r.ts), r.ms_played, r.master_metadata_track_name, r.master_metadata_album_artist_name || "Unknown artist", r.master_metadata_album_album_name || "", r.spotify_track_uri || ""]);
-        } else if ("endTime" in r && "msPlayed" in r && r.trackName) {
-          basic.push([Date.parse(r.endTime.replace(" ", "T") + "Z"), r.msPlayed, r.trackName, r.artistName || "Unknown artist", "", ""]);
-        }
-      }
-    }
-    const rows = (ext.length ? ext : basic).filter((r) => Number.isFinite(r[0]));
-    if (!rows.length) throw new Error("No music listening history found in those files. Look for the ZIP from Spotify containing files named Streaming_History_Audio_… (or StreamingHistory_music_… in the Account data download).");
-    rows.sort((a, b) => a[0] - b[0]);
-    const tracks = [], index = new Map(), seen = new Set();
-    const t = [], ms = [], ti = [];
-    for (const [ts, m, name, artist, album, uri] of rows) {
-      const dup = ts + "|" + name;
-      if (seen.has(dup)) continue;
-      seen.add(dup);
-      const key = uri || artist + "\u0000" + name;
-      let i = index.get(key);
-      if (i == null) { i = tracks.length; index.set(key, i); tracks.push([name, artist, album, uri]); }
-      t.push(ts); ms.push(Math.min(m, 4e9)); ti.push(i);
-    }
-    hist = { kind: ext.length ? "extended" : "basic", tracks, t: Float64Array.from(t), ms: Uint32Array.from(ms), ti: Uint32Array.from(ti) };
-    try { await idb.set("history", hist); } catch {}
-    say("");
-    ui.from = ui.to = null;
-    renderRange();
-  } catch (e) {
-    status.textContent = e.message || String(e);
-    status.className = "note err";
-  }
-}
-
 // =====================================================================================
 // Tooltip (hover on desktop, tap on touch)
 // =====================================================================================
@@ -1221,27 +826,7 @@ function demoData() {
     const f = Math.pow(rnd(), 0.75);
     liked.push({ added: new Date(start + f * (Date.now() - start)).toISOString() });
   }
-  // About three years of made-up streaming history, for the All time / Custom views
-  const htracks = tracks.map((t) => [t.name, t.artists[0].name, t.album.name, ""]);
-  const rows = [];
-  const day0 = new Date(); day0.setHours(0, 0, 0, 0);
-  for (let d = 3 * 365; d >= 1; d--) {
-    const base = day0.getTime() - d * 86400000;
-    const season = 1 + 0.5 * Math.sin(d / 58);
-    const n = Math.floor(rnd() * 40 * season);
-    for (let i = 0; i < n; i++) {
-      let h; do { h = Math.floor(rnd() * 24); } while (rnd() * 8 > weight[h]);
-      const ti = Math.floor(Math.pow(rnd(), 2.2 - d / 900) * htracks.length);
-      const full = rnd() < 0.8;
-      rows.push([base + h * 3600000 + rnd() * 3600000, full ? 120000 + rnd() * 140000 : rnd() * 30000, ti]);
-    }
-  }
-  rows.sort((a, b) => a[0] - b[0]);
-  const history = {
-    kind: "extended", tracks: htracks,
-    t: Float64Array.from(rows, (r) => r[0]), ms: Uint32Array.from(rows, (r) => r[1]), ti: Uint32Array.from(rows, (r) => r[2]),
-  };
-  return { me: { display_name: "Sample listener", images: [] }, top, recent, liked: { total: liked.length, items: liked }, history };
+  return { me: { display_name: "Sample listener", images: [] }, top, recent, liked: { total: liked.length, items: liked } };
 }
 
 // =====================================================================================
@@ -1281,42 +866,13 @@ $("#rangeSeg").onclick = (e) => {
   ui.range = b.dataset.range;
   renderRange();
 };
-$("#moreArtists").onclick = () => { ui.allArtists = !ui.allArtists; renderRange(); };
-$("#moreTracks").onclick = () => { ui.allTracks = !ui.allTracks; renderRange(); };
+$("#moreArtists").onclick = () => { ui.allArtists = !ui.allArtists; renderArtists(); };
+$("#moreTracks").onclick = () => { ui.allTracks = !ui.allTracks; renderTracks(); };
 $("#moreRecent").onclick = () => { ui.allRecent = !ui.allRecent; renderRecent(); };
-$("#histDrop").onclick = () => $("#histFile").click();
-$("#histDrop").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("#histFile").click(); } };
-$("#histFile").onchange = (e) => { if (e.target.files.length) importHistory([...e.target.files]); e.target.value = ""; };
-$("#histDrop").ondragover = (e) => { e.preventDefault(); $("#histDrop").classList.add("over"); };
-$("#histDrop").ondragleave = () => $("#histDrop").classList.remove("over");
-$("#histDrop").ondrop = (e) => { e.preventDefault(); $("#histDrop").classList.remove("over"); if (e.dataTransfer.files.length) importHistory([...e.dataTransfer.files]); };
-$("#histInfo").onclick = async (e) => {
-  if (e.target.id === "replaceHist") $("#histFile").click();
-  if (e.target.id === "removeHist") {
-    hist = null; ui.from = ui.to = null;
-    try { await idb.del("history"); } catch {}
-    renderRange();
-  }
-};
-$("#fromDate").onchange = $("#toDate").onchange = () => {
-  const f = $("#fromDate").value, t = $("#toDate").value;
-  if (!f || !t) return;
-  const next = (v) => { const d = new Date(fromInput(v)); d.setDate(d.getDate() + 1); return d.getTime(); };
-  let a = fromInput(f), b = next(t);
-  if (b <= a) [a, b] = [fromInput(t), next(f)];
-  ui.from = a; ui.to = b;
-  renderRange();
-};
-$("#yearChips").onclick = (e) => {
-  const c = e.target.closest(".chip");
-  if (!c) return;
-  ui.from = Number(c.dataset.from); ui.to = Number(c.dataset.to);
-  renderRange();
-};
 
 (async function main() {
   const q = new URLSearchParams(location.search);
-  if (q.has("demo")) { isDemo = true; data = demoData(); hist = data.history; render(); return; }
+  if (q.has("demo")) { isDemo = true; data = demoData(); render(); return; }
   if (q.has("error") || q.has("code")) history.replaceState(null, "", location.pathname);
   if (q.get("error")) { showSignin(q.get("error") === "access_denied" ? "Sign-in was cancelled." : "Spotify sign-in failed: " + q.get("error")); return; }
   if (q.get("code")) {
